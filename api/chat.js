@@ -1,7 +1,6 @@
 // Vercel serverless function — DeepSeek AI fragrance chat
-// Uses standard Node.js runtime (not edge) for reliable env var support
 
-export default async function handler(req, res) {
+module.exports = async (req, res) => {
   // CORS headers
   res.setHeader('Access-Control-Allow-Origin', '*');
   res.setHeader('Access-Control-Allow-Methods', 'POST, OPTIONS');
@@ -97,4 +96,4 @@ Help the user choose what to wear, answer questions about fragrances, give recom
   } catch (err) {
     return res.status(500).json({ error: err.message });
   }
-}
+};

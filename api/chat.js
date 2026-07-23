@@ -1,6 +1,6 @@
 // Vercel serverless function — DeepSeek AI fragrance chat
 
-module.exports = async (req, res) => {
+export default async function handler(req, res) {
   // CORS headers
   res.setHeader('Access-Control-Allow-Origin', '*');
   res.setHeader('Access-Control-Allow-Methods', 'POST, OPTIONS');
@@ -53,7 +53,7 @@ Help the user choose what to wear, answer questions about fragrances, give recom
 
     if (!response.ok) {
       const errorText = await response.text();
-      return res.status(500).json({ error: `API error: ${response.status} — ${errorText}` });
+      return res.status(500).json({ error: `API error (${response.status}): ${errorText}` });
     }
 
     // Stream DeepSeek's response back as SSE
@@ -96,4 +96,4 @@ Help the user choose what to wear, answer questions about fragrances, give recom
   } catch (err) {
     return res.status(500).json({ error: err.message });
   }
-};
+}

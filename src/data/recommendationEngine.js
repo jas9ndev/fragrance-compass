@@ -1,19 +1,18 @@
-import { classifyWeather, getSeason, WEATHER_RECOMMENDATIONS } from './categories';
+import { classifyWeather, getSeason, getTimeOfDay, WEATHER_RECOMMENDATIONS } from './categories';
 
 /**
  * Score a fragrance against current conditions.
  * Returns a score 0–100 where higher = better match.
  */
-function scoreFragrance(fragrance, weatherKey, tempF, humidity, conditions, month, dayOfYear) {
+function scoreFragrance(fragrance, weatherKey, tempF, humidity, conditions, month, dayOfYear, timeOfDay) {
   const weatherProfile = WEATHER_RECOMMENDATIONS[weatherKey];
   const season = getSeason(month);
   let score = 50; // baseline
 
-  // --- Weather alignment (+0 to +30) ---
+  // --- Weather alignment (+0 to +25) ---
   if (fragrance.weather?.includes(weatherKey)) {
     score += 25;
   } else {
-    // Check if fragrance avoids this weather
     const isAvoided = weatherProfile.avoid?.some(
       avoidFam => fragrance.scentFamily === avoidFam
     );
@@ -47,6 +46,13 @@ function scoreFragrance(fragrance, weatherKey, tempF, humidity, conditions, mont
   ).length || 0;
   score -= badNotes * 5;
 
+  // --- Time of day (+0 to +15) ---
+  if (fragrance.times?.includes(timeOfDay)) {
+    score += 15;
+  } else if (fragrance.times && fragrance.times.length > 0) {
+    score -= 8; // penalize if it has times set but current time isn't one
+  }
+
   // --- Occasion: prefer daily/casual for weekdays, evening for weekends (+0 to +10) ---
   const dayOfWeek = new Date().getDay();
   const isWeekend = dayOfWeek === 0 || dayOfWeek === 6;
@@ -57,14 +63,20 @@ function scoreFragrance(fragrance, weatherKey, tempF, humidity, conditions, mont
     score += 5;
   }
 
-  // --- Variety bonus: avoid recommending the same thing too often ---
-  // (handled externally)
+  // --- Night time bonus for evening scents ---
+  if (timeOfDay === 'Night' && fragrance.occasions?.includes('Evening Out')) {
+    score += 8;
+  }
+  // --- Morning bonus for fresh scents ---
+  if (timeOfDay === 'Morning' && fragrance.scentFamily === 'Citrus' || fragrance.scentFamily === 'Fresh / Aquatic') {
+    score += 5;
+  }
 
   return Math.round(Math.max(0, Math.min(100, score)));
 }
 
 /**
- * Get the best fragrance picks for today.
+ * Get the best fragrance picks for now.
  * Returns top 3 sorted by score, with the winner highlighted.
  */
 export function getDailyPicks(fragrances, weatherData) {
@@ -72,6 +84,7 @@ export function getDailyPicks(fragrances, weatherData) {
 
   const now = new Date();
   const month = now.getMonth() + 1; // 1-based
+  const timeOfDay = getTimeOfDay(now.getHours());
   const dayOfYear = Math.floor(
     (now - new Date(now.getFullYear(), 0, 0)) / (1000 * 60 * 60 * 24)
   );
@@ -86,7 +99,7 @@ export function getDailyPicks(fragrances, weatherData) {
   const scored = fragrances.map(frag => ({
     ...frag,
     weatherKey,
-    score: scoreFragrance(frag, weatherKey, tempF, humidity, conditions, month, dayOfYear),
+    score: scoreFragrance(frag, weatherKey, tempF, humidity, conditions, month, dayOfYear, timeOfDay),
   }));
 
   // Sort by score descending

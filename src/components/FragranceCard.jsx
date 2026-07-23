@@ -46,6 +46,9 @@ export default function FragranceCard({ fragrance, isWinner, compact, onDelete }
             </div>
             <div className="fragrance-meta">
               <span>Seasons: {fragrance.seasons?.join(', ')}</span>
+              <span>Best for: {fragrance.times?.length > 0
+                ? fragrance.times.map(t => t === 'Morning' ? '🌅' : t === 'Day' ? '☀️' : '🌙').join(' ')
+                : 'Anytime'}</span>
               <span>Occasions: {fragrance.occasions?.join(', ')}</span>
               <span className="fragrance-rating">{'★'.repeat(fragrance.rating)}{'☆'.repeat(5 - fragrance.rating)}</span>
             </div>

@@ -1,5 +1,6 @@
 import { useState } from 'react';
-import { SCENT_FAMILIES, SEASONS, OCCASIONS, NOTES } from '../data/categories';
+import { SCENT_FAMILIES, SEASONS, OCCASIONS, TIMES, NOTES } from '../data/categories';
+import { searchFragrance } from '../data/fragrances';
 
 const INITIAL = {
   name: '',
@@ -7,6 +8,7 @@ const INITIAL = {
   scentFamily: 'Citrus',
   notes: [],
   seasons: [],
+  times: [],
   occasions: [],
   rating: 3,
   description: '',
@@ -38,6 +40,29 @@ export default function AddFragrance({ onAdd }) {
 
   const removeNote = (note) => {
     update('notes', form.notes.filter(n => n !== note));
+  };
+
+  const handleAutoFill = () => {
+    const query = (form.name + ' ' + form.brand).trim();
+    if (!query) {
+      alert('Type a fragrance name first');
+      return;
+    }
+    const result = searchFragrance(query);
+    if (result) {
+      setForm(prev => ({
+        ...prev,
+        scentFamily: result.scentFamily,
+        notes: result.notes,
+        seasons: result.seasons,
+        times: result.times || [],
+        occasions: result.occasions,
+        rating: result.rating,
+        description: result.description,
+      }));
+    } else {
+      alert('No match found in our database. You can fill in the details manually!');
+    }
   };
 
   const handleSubmit = (e) => {
@@ -93,6 +118,10 @@ export default function AddFragrance({ onAdd }) {
           </label>
         </div>
 
+        <button type="button" className="btn btn-secondary" onClick={handleAutoFill} style={{width: '100%'}}>
+          🔍 Auto-Fill Details
+        </button>
+
         <label>
           Scent Family
           <select value={form.scentFamily} onChange={e => update('scentFamily', e.target.value)}>
@@ -126,6 +155,17 @@ export default function AddFragrance({ onAdd }) {
 
         <div className="form-row">
           <label>
+            Time of Day
+            <div className="checkbox-group">
+              {TIMES.map(t => (
+                <label key={t} className={`checkbox-label ${form.times.includes(t) ? 'active' : ''}`}
+                  onClick={() => toggleArray('times', t)}>
+                  {t === 'Morning' ? '🌅' : t === 'Day' ? '☀️' : '🌙'} {t}
+                </label>
+              ))}
+            </div>
+          </label>
+          <label>
             Seasons
             <div className="checkbox-group">
               {SEASONS.map(s => (
@@ -136,6 +176,8 @@ export default function AddFragrance({ onAdd }) {
               ))}
             </div>
           </label>
+        </div>
+        <div className="form-row">
           <label>
             Occasions
             <div className="checkbox-group">

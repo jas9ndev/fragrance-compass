@@ -16,6 +16,12 @@ export const OCCASIONS = [
   'Evening Out',
 ];
 
+export const TIMES = [
+  'Morning',
+  'Day',
+  'Night',
+];
+
 export const SCENT_FAMILIES = [
   'Citrus',
   'Fresh / Aquatic',
@@ -118,6 +124,14 @@ export const WEATHER_RECOMMENDATIONS = {
     notes: ['Lavender', 'Musk', 'Iris', 'Tea', 'Neroli', 'Sage'],
   },
 };
+
+// Get the current time category based on hour
+// Morning: 5-11 | Day: 11-17 | Night: 17-5
+export function getTimeOfDay(hour = new Date().getHours()) {
+  if (hour >= 5 && hour < 11) return 'Morning';
+  if (hour >= 11 && hour < 17) return 'Day';
+  return 'Night';
+}
 
 // Get the weather category from temperature and humidity/precipitation
 export function classifyWeather(tempF, humidity, conditions) {

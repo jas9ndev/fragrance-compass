@@ -1,6 +1,7 @@
 import { useState, useEffect } from 'react';
 import FragranceCard from './FragranceCard';
 import { getDailyPicks } from '../data/recommendationEngine';
+import { getTimeOfDay } from '../data/categories';
 
 export default function DailyPick({ fragrances, weather, onRefreshPicks }) {
   const [picks, setPicks] = useState([]);
@@ -68,11 +69,11 @@ export default function DailyPick({ fragrances, weather, onRefreshPicks }) {
   return (
     <div className="daily-pick">
       <h2>
-        Today&apos;s Recommendation
+        {getTimeIcon()} {getTimeLabel()} Pick
         {weather && <button className="btn-icon refresh-btn" onClick={onRefreshPicks} title="Refresh">🔄</button>}
       </h2>
       <p className="pick-subtitle">
-        Based on current weather and your collection
+        Based on current weather, time of day, and your collection
         {rerollCount > 0 && ` · re-roll ${rerollCount}/2 used`}
       </p>
       {picks.length === 0 ? (
@@ -98,4 +99,18 @@ export default function DailyPick({ fragrances, weather, onRefreshPicks }) {
       )}
     </div>
   );
+}
+
+function getTimeLabel() {
+  const t = getTimeOfDay();
+  if (t === 'Morning') return 'Morning';
+  if (t === 'Day') return "Afternoon";
+  return 'Evening';
+}
+
+function getTimeIcon() {
+  const t = getTimeOfDay();
+  if (t === 'Morning') return '🌅';
+  if (t === 'Day') return '☀️';
+  return '🌙';
 }

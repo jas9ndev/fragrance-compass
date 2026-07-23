@@ -9,6 +9,7 @@ const defaultFragrances = [
     scentFamily: 'Aromatic',
     notes: ['Bergamot', 'Pepper', 'Amber', 'Lavender'],
     seasons: ['Spring', 'Summer', 'Fall'],
+    times: ['Day'],
     occasions: ['Daily Wear', 'Casual', 'Office / School'],
     weather: ['warm', 'hot_dry', 'mild', 'cool_dry'],
     rating: 5,
@@ -22,6 +23,7 @@ const defaultFragrances = [
     scentFamily: 'Aromatic',
     notes: ['Grapefruit', 'Ginger', 'Cedar', 'Sandalwood'],
     seasons: ['Spring', 'Summer', 'Fall', 'Winter'],
+    times: ['Morning', 'Day'],
     occasions: ['Daily Wear', 'Office / School', 'Formal / Date Night'],
     weather: ['mild', 'cool_dry', 'warm', 'cool_wet', 'cold'],
     rating: 5,
@@ -35,6 +37,7 @@ const defaultFragrances = [
     scentFamily: 'Fresh / Aquatic',
     notes: ['Bergamot', 'Neroli', 'Sea Salt', 'Jasmine'],
     seasons: ['Spring', 'Summer'],
+    times: ['Morning', 'Day'],
     occasions: ['Daily Wear', 'Casual', 'Office / School'],
     weather: ['hot_humid', 'hot_dry', 'warm', 'rainy'],
     rating: 4,
@@ -48,6 +51,7 @@ const defaultFragrances = [
     scentFamily: 'Oriental / Spicy',
     notes: ['Tobacco', 'Vanilla', 'Leather', 'Rum'],
     seasons: ['Fall', 'Winter'],
+    times: ['Night'],
     occasions: ['Evening Out', 'Casual', 'Special Occasion'],
     weather: ['cold', 'cool_wet', 'cool_dry'],
     rating: 4,
@@ -61,6 +65,7 @@ const defaultFragrances = [
     scentFamily: 'Citrus',
     notes: ['Lemon', 'Apple', 'Cedar', 'Rose'],
     seasons: ['Spring', 'Summer'],
+    times: ['Morning', 'Day'],
     occasions: ['Daily Wear', 'Casual', 'Office / School'],
     weather: ['hot_humid', 'hot_dry', 'warm', 'mild'],
     rating: 4,
@@ -74,6 +79,7 @@ const defaultFragrances = [
     scentFamily: 'Woody',
     notes: ['Orange', 'Vetiver', 'Cedar', 'Pepper'],
     seasons: ['Fall', 'Winter', 'Spring'],
+    times: ['Day'],
     occasions: ['Office / School', 'Daily Wear', 'Formal / Date Night'],
     weather: ['cool_dry', 'cool_wet', 'cold', 'mild'],
     rating: 5,
@@ -87,6 +93,7 @@ const defaultFragrances = [
     scentFamily: 'Fruity',
     notes: ['Pineapple', 'Bergamot', 'Birch', 'Musk'],
     seasons: ['Spring', 'Summer', 'Fall'],
+    times: ['Day', 'Night'],
     occasions: ['Special Occasion', 'Evening Out', 'Formal / Date Night'],
     weather: ['warm', 'mild', 'cool_dry', 'hot_dry'],
     rating: 5,
@@ -100,6 +107,7 @@ const defaultFragrances = [
     scentFamily: 'Oriental / Spicy',
     notes: ['Cinnamon', 'Vanilla', 'Tobacco', 'Pepper'],
     seasons: ['Fall', 'Winter'],
+    times: ['Night'],
     occasions: ['Evening Out', 'Special Occasion', 'Formal / Date Night'],
     weather: ['cold', 'cool_wet'],
     rating: 5,
@@ -113,6 +121,7 @@ const defaultFragrances = [
     scentFamily: 'Aromatic',
     notes: ['Apple', 'Sage', 'Ginger', 'Amber'],
     seasons: ['Spring', 'Fall', 'Winter'],
+    times: ['Day', 'Night'],
     occasions: ['Daily Wear', 'Office / School', 'Evening Out'],
     weather: ['cool_dry', 'cool_wet', 'cold', 'mild'],
     rating: 4,
@@ -126,6 +135,7 @@ const defaultFragrances = [
     scentFamily: 'Fresh / Aquatic',
     notes: ['Sea Salt', 'Cucumber', 'Apple', 'Musk'],
     seasons: ['Spring', 'Summer'],
+    times: ['Morning', 'Day'],
     occasions: ['Daily Wear', 'Casual'],
     weather: ['hot_humid', 'hot_dry', 'warm', 'rainy'],
     rating: 3,
@@ -139,6 +149,7 @@ const defaultFragrances = [
     scentFamily: 'Gourmand',
     notes: ['Saffron', 'Amber', 'Cedar', 'Almond'],
     seasons: ['Fall', 'Winter', 'Spring'],
+    times: ['Night'],
     occasions: ['Formal / Date Night', 'Special Occasion', 'Evening Out'],
     weather: ['cool_dry', 'cool_wet', 'cold', 'mild'],
     rating: 5,
@@ -152,6 +163,7 @@ const defaultFragrances = [
     scentFamily: 'Aromatic',
     notes: ['Ginger', 'Grapefruit', 'Amber', 'Sage'],
     seasons: ['Spring', 'Summer', 'Fall'],
+    times: ['Morning', 'Day'],
     occasions: ['Daily Wear', 'Office / School', 'Evening Out'],
     weather: ['warm', 'hot_dry', 'mild', 'cool_dry'],
     rating: 4,
@@ -159,6 +171,46 @@ const defaultFragrances = [
     image: null,
   },
 ];
+
+// Fragrance search function for autofill
+const fragranceSearchIndex = {};
+defaultFragrances.forEach(f => {
+  const key = (f.name + ' ' + f.brand).toLowerCase().replace(/[^a-z0-9 ]/g, '');
+  fragranceSearchIndex[key] = f;
+  // Also store alt keys
+  const altKey = (f.brand + ' ' + f.name).toLowerCase().replace(/[^a-z0-9 ]/g, '');
+  fragranceSearchIndex[altKey] = f;
+});
+
+export function searchFragrance(query) {
+  const clean = query.toLowerCase().replace(/[^a-z0-9 ]/g, '').trim();
+  if (!clean) return null;
+
+  // Direct hit
+  if (fragranceSearchIndex[clean]) return fragranceSearchIndex[clean];
+
+  // Partial match — return best match
+  const words = clean.split(' ');
+  let best = null;
+  let bestScore = 0;
+
+  defaultFragrances.forEach(f => {
+    const name = (f.name + ' ' + f.brand).toLowerCase();
+    let score = 0;
+    words.forEach(w => {
+      if (name.includes(w)) score += 10;
+      if (f.name.toLowerCase().includes(w)) score += 15;
+    });
+    // Boost if first word matches name start
+    if (words[0] && f.name.toLowerCase().startsWith(words[0])) score += 20;
+    if (score > bestScore) {
+      bestScore = score;
+      best = f;
+    }
+  });
+
+  return bestScore >= 10 ? best : null;
+}
 
 // Load user fragrances from localStorage, fall back to defaults
 export function loadFragrances() {

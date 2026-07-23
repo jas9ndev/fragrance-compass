@@ -6,6 +6,7 @@ import DailyPick from './components/DailyPick';
 import Inventory from './components/Inventory';
 import AddFragrance from './components/AddFragrance';
 import History from './components/History';
+import ScentChat from './components/ScentChat';
 
 import { useWeather } from './hooks/useWeather';
 import { loadFragrances, saveFragrances, getNewId } from './data/fragrances';
@@ -54,6 +55,40 @@ function App() {
 
   const handleRefreshPicks = () => {
     refresh();
+  };
+
+  const handleExport = () => {
+    const data = JSON.stringify(fragrances, null, 2);
+    const blob = new Blob([data], { type: 'application/json' });
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement('a');
+    a.href = url;
+    a.download = `fragrance-compass-collection-${new Date().toISOString().split('T')[0]}.json`;
+    a.click();
+    URL.revokeObjectURL(url);
+  };
+
+  const handleImport = (e) => {
+    const file = e.target.files[0];
+    if (!file) return;
+    const reader = new FileReader();
+    reader.onload = (event) => {
+      try {
+        const imported = JSON.parse(event.target.result);
+        if (!Array.isArray(imported)) {
+          alert('Invalid file: expected a list of fragrances');
+          return;
+        }
+        setFragrances(imported);
+        saveFragrances(imported);
+        alert(`Imported ${imported.length} fragrances successfully!`);
+      } catch {
+        alert('Invalid file: could not parse JSON');
+      }
+    };
+    reader.readAsText(file);
+    // Reset input so same file can be re-imported
+    e.target.value = '';
   };
 
   // Track the wear when user picks
@@ -132,7 +167,23 @@ function App() {
         </section>
       </main>
 
+      <ScentChat fragrances={fragrances} weather={weather} />
+
       <footer className="app-footer">
+        <div className="footer-actions">
+          <button className="btn btn-sm btn-secondary" onClick={handleExport}>
+            📥 Export Collection
+          </button>
+          <label className="btn btn-sm btn-secondary import-label">
+            📤 Import Collection
+            <input
+              type="file"
+              accept=".json"
+              style={{ display: 'none' }}
+              onChange={handleImport}
+            />
+          </label>
+        </div>
         <p>Fragrance Compass — built with ❤️ for the daily scent ritual</p>
       </footer>
     </div>

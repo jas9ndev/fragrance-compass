@@ -169,7 +169,10 @@ function App() {
         </section>
       </main>
 
-      <ScentChat fragrances={fragrances} weather={weather} />
+      <ScentChat fragrances={fragrances} weather={weather} onAdd={(f) => {
+        handleAddFragrance(f);
+        setTab('inventory');
+      }} />
 
       <footer className="app-footer">
         <div className="footer-actions">

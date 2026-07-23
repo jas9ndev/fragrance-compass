@@ -1,240 +1,186 @@
-// Default fragrance library — add your own!
-// Each fragrance has categories for the recommendation engine to work with
+// Fragrance search using Fragella API
+// Previously had a hardcoded ~37 fragrances — now queries 74k+ in real time
 
-const defaultFragrances = [
-  {
-    id: 1,
-    name: 'Dior Sauvage',
-    brand: 'Dior',
-    scentFamily: 'Aromatic',
-    notes: ['Bergamot', 'Pepper', 'Amber', 'Lavender'],
-    seasons: ['Spring', 'Summer', 'Fall'],
-    times: ['Day'],
-    occasions: ['Daily Wear', 'Casual', 'Office / School'],
-    weather: ['warm', 'hot_dry', 'mild', 'cool_dry'],
-    rating: 5,
-    description: 'A fresh, spicy fougère — versatile crowd-pleaser',
-    image: null,
-  },
-  {
-    id: 2,
-    name: 'Bleu de Chanel',
-    brand: 'Chanel',
-    scentFamily: 'Aromatic',
-    notes: ['Grapefruit', 'Ginger', 'Cedar', 'Sandalwood'],
-    seasons: ['Spring', 'Summer', 'Fall', 'Winter'],
-    times: ['Morning', 'Day'],
-    occasions: ['Daily Wear', 'Office / School', 'Formal / Date Night'],
-    weather: ['mild', 'cool_dry', 'warm', 'cool_wet', 'cold'],
-    rating: 5,
-    description: 'Sophisticated, clean, and versatile — a signature scent',
-    image: null,
-  },
-  {
-    id: 3,
-    name: 'Acqua di Gio',
-    brand: 'Giorgio Armani',
-    scentFamily: 'Fresh / Aquatic',
-    notes: ['Bergamot', 'Neroli', 'Sea Salt', 'Jasmine'],
-    seasons: ['Spring', 'Summer'],
-    times: ['Morning', 'Day'],
-    occasions: ['Daily Wear', 'Casual', 'Office / School'],
-    weather: ['hot_humid', 'hot_dry', 'warm', 'rainy'],
-    rating: 4,
-    description: 'The classic fresh aquatic — perfect for heat',
-    image: null,
-  },
-  {
-    id: 4,
-    name: 'Jazz Club',
-    brand: 'Maison Margiela',
-    scentFamily: 'Oriental / Spicy',
-    notes: ['Tobacco', 'Vanilla', 'Leather', 'Rum'],
-    seasons: ['Fall', 'Winter'],
-    times: ['Night'],
-    occasions: ['Evening Out', 'Casual', 'Special Occasion'],
-    weather: ['cold', 'cool_wet', 'cool_dry'],
-    rating: 4,
-    description: 'Warm, boozy, cozy — like a dimly lit jazz bar',
-    image: null,
-  },
-  {
-    id: 5,
-    name: 'Light Blue',
-    brand: 'Dolce & Gabbana',
-    scentFamily: 'Citrus',
-    notes: ['Lemon', 'Apple', 'Cedar', 'Rose'],
-    seasons: ['Spring', 'Summer'],
-    times: ['Morning', 'Day'],
-    occasions: ['Daily Wear', 'Casual', 'Office / School'],
-    weather: ['hot_humid', 'hot_dry', 'warm', 'mild'],
-    rating: 4,
-    description: 'Bright Sicilian citrus — sunny in a bottle',
-    image: null,
-  },
-  {
-    id: 6,
-    name: 'Terre d\'Hermès',
-    brand: 'Hermès',
-    scentFamily: 'Woody',
-    notes: ['Orange', 'Vetiver', 'Cedar', 'Pepper'],
-    seasons: ['Fall', 'Winter', 'Spring'],
-    times: ['Day'],
-    occasions: ['Office / School', 'Daily Wear', 'Formal / Date Night'],
-    weather: ['cool_dry', 'cool_wet', 'cold', 'mild'],
-    rating: 5,
-    description: 'Earthy, mineral, grounded — pure class',
-    image: null,
-  },
-  {
-    id: 7,
-    name: 'Aventus',
-    brand: 'Creed',
-    scentFamily: 'Fruity',
-    notes: ['Pineapple', 'Bergamot', 'Birch', 'Musk'],
-    seasons: ['Spring', 'Summer', 'Fall'],
-    times: ['Day', 'Night'],
-    occasions: ['Special Occasion', 'Evening Out', 'Formal / Date Night'],
-    weather: ['warm', 'mild', 'cool_dry', 'hot_dry'],
-    rating: 5,
-    description: 'The legendary smoky-pineapple — confidence in a bottle',
-    image: null,
-  },
-  {
-    id: 8,
-    name: 'Spicebomb Extreme',
-    brand: 'Viktor & Rolf',
-    scentFamily: 'Oriental / Spicy',
-    notes: ['Cinnamon', 'Vanilla', 'Tobacco', 'Pepper'],
-    seasons: ['Fall', 'Winter'],
-    times: ['Night'],
-    occasions: ['Evening Out', 'Special Occasion', 'Formal / Date Night'],
-    weather: ['cold', 'cool_wet'],
-    rating: 5,
-    description: 'Explosively warm and sweet — best in deep cold',
-    image: null,
-  },
-  {
-    id: 9,
-    name: 'Y Eau de Parfum',
-    brand: 'Yves Saint Laurent',
-    scentFamily: 'Aromatic',
-    notes: ['Apple', 'Sage', 'Ginger', 'Amber'],
-    seasons: ['Spring', 'Fall', 'Winter'],
-    times: ['Day', 'Night'],
-    occasions: ['Daily Wear', 'Office / School', 'Evening Out'],
-    weather: ['cool_dry', 'cool_wet', 'cold', 'mild'],
-    rating: 4,
-    description: 'Modern, sharp, sweet-fresh — a great all-rounder',
-    image: null,
-  },
-  {
-    id: 10,
-    name: 'Nautica Voyage',
-    brand: 'Nautica',
-    scentFamily: 'Fresh / Aquatic',
-    notes: ['Sea Salt', 'Cucumber', 'Apple', 'Musk'],
-    seasons: ['Spring', 'Summer'],
-    times: ['Morning', 'Day'],
-    occasions: ['Daily Wear', 'Casual'],
-    weather: ['hot_humid', 'hot_dry', 'warm', 'rainy'],
-    rating: 3,
-    description: 'Budget king — fresh green aquatic for hot days',
-    image: null,
-  },
-  {
-    id: 11,
-    name: 'Baccarat Rouge 540',
-    brand: 'Maison Francis Kurkdjian',
-    scentFamily: 'Gourmand',
-    notes: ['Saffron', 'Amber', 'Cedar', 'Almond'],
-    seasons: ['Fall', 'Winter', 'Spring'],
-    times: ['Night'],
-    occasions: ['Formal / Date Night', 'Special Occasion', 'Evening Out'],
-    weather: ['cool_dry', 'cool_wet', 'cold', 'mild'],
-    rating: 5,
-    description: 'Sweet, saffron-amber masterpiece — unmistakable',
-    image: null,
-  },
-  {
-    id: 12,
-    name: 'L\'Immensité',
-    brand: 'Louis Vuitton',
-    scentFamily: 'Aromatic',
-    notes: ['Ginger', 'Grapefruit', 'Amber', 'Sage'],
-    seasons: ['Spring', 'Summer', 'Fall'],
-    times: ['Morning', 'Day'],
-    occasions: ['Daily Wear', 'Office / School', 'Evening Out'],
-    weather: ['warm', 'hot_dry', 'mild', 'cool_dry'],
-    rating: 4,
-    description: 'Bright ginger-citrus with a salty mineral base',
-    image: null,
-  },
-];
+const FRAGELLA_API = 'https://api.fragella.com/api/v1';
+const API_KEY = 'a14dfb3c5203f775bbf758141fa02c4e4f6fe68c8527221ceace16e01984e485';
 
-// Fragrance search function for autofill
-const fragranceSearchIndex = {};
-defaultFragrances.forEach(f => {
-  const key = (f.name + ' ' + f.brand).toLowerCase().replace(/[^a-z0-9 ]/g, '');
-  fragranceSearchIndex[key] = f;
-  // Also store alt keys
-  const altKey = (f.brand + ' ' + f.name).toLowerCase().replace(/[^a-z0-9 ]/g, '');
-  fragranceSearchIndex[altKey] = f;
-});
+const SCENT_FAMILY_MAP = {
+  'aromatic': 'Aromatic',
+  'citrus': 'Fresh',
+  'fresh spicy': 'Aromatic',
+  'woody': 'Woody',
+  'earthy': 'Woody',
+  'mossy': 'Woody',
+  'green': 'Fresh',
+  'floral': 'Floral',
+  'oriental': 'Oriental',
+  'sweet': 'Gourmand',
+  'vanilla': 'Gourmand',
+  'gourmand': 'Gourmand',
+  'fruity': 'Fruity',
+  'spicy': 'Oriental',
+  'warm spicy': 'Oriental',
+  'fresh': 'Fresh',
+  'aquatic': 'Fresh',
+  'ozonic': 'Fresh',
+  'aldehydic': 'Fresh',
+  'powdery': 'Woody',
+  'balsamic': 'Oriental',
+  'animalic': 'Oriental',
+  'leather': 'Woody',
+  'tobacco': 'Oriental',
+  'amber': 'Oriental',
+};
 
-export function searchFragrance(query) {
-  const clean = query.toLowerCase().replace(/[^a-z0-9 ]/g, '').trim();
-  if (!clean) return null;
-
-  // Direct hit
-  if (fragranceSearchIndex[clean]) return fragranceSearchIndex[clean];
-
-  // Partial match — return best match
-  const words = clean.split(' ');
-  let best = null;
-  let bestScore = 0;
-
-  defaultFragrances.forEach(f => {
-    const name = (f.name + ' ' + f.brand).toLowerCase();
-    let score = 0;
-    words.forEach(w => {
-      if (name.includes(w)) score += 10;
-      if (f.name.toLowerCase().includes(w)) score += 15;
-    });
-    // Boost if first word matches name start
-    if (words[0] && f.name.toLowerCase().startsWith(words[0])) score += 20;
-    if (score > bestScore) {
-      bestScore = score;
-      best = f;
-    }
-  });
-
-  return bestScore >= 10 ? best : null;
+function mapAccordsToScentFamily(accords) {
+  if (!accords || accords.length === 0) return 'Fresh';
+  // Pick the dominant accord's family, or fall through to first match
+  for (const accord of accords) {
+    const lower = accord.toLowerCase();
+    if (SCENT_FAMILY_MAP[lower]) return SCENT_FAMILY_MAP[lower];
+  }
+  return 'Fresh';
 }
 
-// Load user fragrances from localStorage, fall back to defaults
+function mapSeason(season) {
+  const s = season?.toLowerCase() || '';
+  if (s === 'spring') return 'Spring';
+  if (s === 'summer') return 'Summer';
+  if (s === 'fall') return 'Fall';
+  if (s === 'winter') return 'Winter';
+  return null;
+}
+
+function mapOccasion(occasion) {
+  const o = occasion?.toLowerCase() || '';
+  if (o.includes('professional') || o.includes('office')) return 'Office / School';
+  if (o.includes('casual')) return 'Casual';
+  if (o.includes('night out') || o.includes('evening')) return 'Evening Out';
+  if (o.includes('formal') || o.includes('special')) return 'Formal';
+  return 'Daily Wear';
+}
+
+function mapWeather(seasonScores) {
+  if (!seasonScores) return ['mild'];
+  const weather = [];
+  const seasons = seasonScores
+    .filter(s => s.score > 1)
+    .map(s => s.name.toLowerCase());
+
+  if (seasons.includes('spring')) weather.push('mild');
+  if (seasons.includes('summer')) weather.push('warm', 'hot_dry');
+  if (seasons.includes('fall')) weather.push('cool_dry');
+  if (seasons.includes('winter')) weather.push('cold');
+
+  return weather.length > 0 ? weather : ['mild'];
+}
+
+function mapTimes(occasionRanking) {
+  if (!occasionRanking) return ['Day'];
+  // If ranked for night out, include Night
+  const hasNight = occasionRanking.some(o =>
+    o.name.toLowerCase().includes('night out') && o.score > 0
+  );
+  return hasNight ? ['Morning', 'Day', 'Night'] : ['Morning', 'Day'];
+}
+
+export async function searchFragrance(query) {
+  if (!query || query.trim().length < 2) return null;
+
+  try {
+    const clean = query.replace(/[^a-zA-Z0-9 '’-]/g, '').trim();
+    const url = `${FRAGELLA_API}/fragrances?search=${encodeURIComponent(clean)}&limit=5`;
+    const res = await fetch(url, {
+      headers: { 'x-api-key': API_KEY },
+    });
+
+    if (!res.ok) return null;
+
+    const data = await res.json();
+    if (!data || data.length === 0) return null;
+
+    // Find the best match by name or brand match
+    const queryLower = clean.toLowerCase();
+    let best = data.find(f =>
+      f.Name?.toLowerCase() === queryLower ||
+      f.Brand?.toLowerCase() === queryLower
+    );
+    if (!best) best = data[0];
+
+    const name = best.Name || best._id || 'Unknown';
+    const seasons = (best['Season Ranking'] || [])
+      .filter(s => s.score > 0.5)
+      .map(s => mapSeason(s.name))
+      .filter(Boolean);
+
+    const occasions = (best['Occasion Ranking'] || [])
+      .filter(o => o.score > 0.3)
+      .map(o => mapOccasion(o.name));
+    // Ensure at least one occasion
+    if (occasions.length === 0) occasions.push('Daily Wear');
+
+    const times = mapTimes(best['Occasion Ranking']);
+
+    // Determine scent family
+    let scentFamily = mapAccordsToScentFamily(best['Main Accords'] || []);
+    // Override based on name/notes hints
+    const allNotes = [
+      ...(best.Notes?.Top || []).map(n => n.name),
+      ...(best.Notes?.Middle || []).map(n => n.name),
+      ...(best.Notes?.Base || []).map(n => n.name),
+      ...(best['General Notes'] || [])
+    ].map(n => n.toLowerCase());
+
+    if (allNotes.some(n => ['sugar', 'caramel', 'chocolate', 'cocoa', 'honey', 'marshmallow'].includes(n))) {
+      scentFamily = 'Gourmand';
+    } else if (allNotes.some(n => ['oud', 'agarwood', 'incense', 'frankincense', 'myrrh'].includes(n))) {
+      scentFamily = 'Woody';
+    } else if (allNotes.some(n => ['rose', 'jasmine', 'lavender', 'violet', 'iris', 'ylang'].includes(n))) {
+      if (scentFamily === 'Fresh' || scentFamily === 'Aromatic') scentFamily = 'Floral';
+    }
+
+    let rating = 3;
+    if (best.rating) {
+      const r = parseFloat(best.rating);
+      if (!isNaN(r)) rating = Math.round(r);
+    }
+    rating = Math.max(1, Math.min(5, rating));
+
+    return {
+      name: name,
+      brand: best.Brand || '',
+      scentFamily,
+      seasons,
+      times,
+      occasions,
+      weather: mapWeather(best['Season Ranking']),
+      rating,
+      notes: allNotes.slice(0, 6).join(', '),
+      image: best['Image URL'] || best['Image URL Transparent'] || null,
+    };
+  } catch {
+    return null;
+  }
+}
+
+// --- localStorage utilities (kept for App.jsx compatibility) ---
+
 export function loadFragrances() {
   try {
-    const stored = localStorage.getItem('fragrance-compass-inventory');
-    if (stored) {
-      return JSON.parse(stored);
-    }
-  } catch (e) {
-    console.warn('Could not load saved fragrances', e);
+    const stored = localStorage.getItem('fragrance-compass-collection');
+    return stored ? JSON.parse(stored) : [];
+  } catch {
+    return [];
   }
-  return defaultFragrances;
 }
 
 export function saveFragrances(fragrances) {
   try {
-    localStorage.setItem('fragrance-compass-inventory', JSON.stringify(fragrances));
-  } catch (e) {
-    console.warn('Could not save fragrances', e);
-  }
+    localStorage.setItem('fragrance-compass-collection', JSON.stringify(fragrances));
+  } catch {}
 }
 
 export function getNewId(fragrances) {
-  return fragrances.length > 0 ? Math.max(...fragrances.map(f => f.id)) + 1 : 1;
+  if (!fragrances || fragrances.length === 0) return 1;
+  return Math.max(...fragrances.map(f => f.id || 0)) + 1;
 }
-
-export default defaultFragrances;

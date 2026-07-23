@@ -1,11 +1,12 @@
 import { useState, useRef, useEffect } from 'react';
 import { getTimeOfDay } from '../data/categories';
 
-export default function ScentChat({ fragrances, weather }) {
+export default function ScentChat({ fragrances, weather, onAdd }) {
   const [open, setOpen] = useState(false);
   const [messages, setMessages] = useState([]);
   const [input, setInput] = useState('');
   const [loading, setLoading] = useState(false);
+  const [added, setAdded] = useState(null);
   const bottomRef = useRef(null);
 
   useEffect(() => {
@@ -60,6 +61,7 @@ export default function ScentChat({ fragrances, weather }) {
       const decoder = new TextDecoder();
       let fullText = '';
       let buffer = '';
+      let addPayload = null;
 
       while (true) {
         const { done, value } = await reader.read();
@@ -79,6 +81,16 @@ export default function ScentChat({ fragrances, weather }) {
             const content = parsed.content || '';
             if (content) {
               fullText += content;
+
+              // Check for __ADD__ payload at the end of the content
+              const addMatch = fullText.match(/__ADD__:\s*(\{.*\})/);
+              if (addMatch) {
+                try {
+                  addPayload = JSON.parse(addMatch[1]);
+                  fullText = fullText.replace(/__ADD__:\s*\{.*\}/, '').trim();
+                } catch {}
+              }
+
               setMessages(prev => {
                 const copy = [...prev];
                 copy[copy.length - 1] = { role: 'assistant', content: fullText };
@@ -87,6 +99,31 @@ export default function ScentChat({ fragrances, weather }) {
             }
           } catch {}
         }
+      }
+
+      // If there's an ADD payload, trigger it
+      if (addPayload && onAdd) {
+        const newFragrance = {
+          id: Date.now().toString(),
+          name: addPayload.name || 'Unknown',
+          brand: addPayload.brand || 'Unknown',
+          scentFamily: addPayload.scentFamily || 'Fresh',
+          seasons: addPayload.seasons || [],
+          occasions: addPayload.occasions || [],
+          times: addPayload.times || [],
+          rating: addPayload.rating || 3,
+          notes: addPayload.notes || '',
+          dateAdded: new Date().toISOString(),
+        };
+        onAdd(newFragrance);
+        setMessages(prev => {
+          const copy = [...prev];
+          if (copy[copy.length - 1].role === 'assistant') {
+            const current = copy[copy.length - 1].content;
+            copy[copy.length - 1].content = `${current}\n\n✅ Added **${newFragrance.name}** (${newFragrance.brand}) to your collection!`;
+          }
+          return copy;
+        });
       }
     } catch (err) {
       setMessages(prev => {
@@ -128,7 +165,7 @@ export default function ScentChat({ fragrances, weather }) {
           <div className="chat-messages">
             {messages.map((m, i) => (
               <div key={i} className={`chat-msg ${m.role} ${m.loading ? 'loading' : ''}`}>
-                {m.content}
+                {renderContent(m.content)}
               </div>
             ))}
             <div ref={bottomRef} />
@@ -154,4 +191,21 @@ export default function ScentChat({ fragrances, weather }) {
       )}
     </>
   );
+}
+
+// Simple markdown parser for bold, italic, line breaks
+function renderContent(text) {
+  if (!text) return '';
+  // Escape HTML first
+  let html = text
+    .replace(/&/g, '&amp;')
+    .replace(/</g, '&lt;')
+    .replace(/>/g, '&gt;')
+    // Bold
+    .replace(/\*\*(.+?)\*\*/g, '<strong>$1</strong>')
+    // Italic
+    .replace(/\*(.+?)\*/g, '<em>$1</em>')
+    // Line breaks
+    .replace(/\n/g, '<br />');
+  return <span dangerouslySetInnerHTML={{ __html: html }} />;
 }

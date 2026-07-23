@@ -42,26 +42,27 @@ export default function AddFragrance({ onAdd }) {
     update('notes', form.notes.filter(n => n !== note));
   };
 
-  const handleAutoFill = () => {
+  const handleAutoFill = async () => {
     const query = (form.name + ' ' + form.brand).trim();
     if (!query) {
       alert('Type a fragrance name first');
       return;
     }
-    const result = searchFragrance(query);
+    const result = await searchFragrance(query);
     if (result) {
+      const notesArray = result.notes ? result.notes.split(', ').filter(Boolean) : [];
       setForm(prev => ({
         ...prev,
-        scentFamily: result.scentFamily,
-        notes: result.notes,
-        seasons: result.seasons,
+        scentFamily: result.scentFamily || prev.scentFamily,
+        notes: notesArray,
+        seasons: result.seasons || [],
         times: result.times || [],
-        occasions: result.occasions,
-        rating: result.rating,
-        description: result.description,
+        occasions: result.occasions || [],
+        rating: result.rating || 3,
+        description: result.name + (result.brand ? ' by ' + result.brand : ''),
       }));
     } else {
-      alert('No match found in our database. You can fill in the details manually!');
+      alert('No match found — you can fill in the details manually!');
     }
   };
 

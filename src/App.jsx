@@ -2,6 +2,7 @@ import { useState, useEffect } from 'react';
 import './App.css';
 
 import WeatherWidget from './components/WeatherWidget';
+import ClockWidget from './components/ClockWidget';
 import DailyPick from './components/DailyPick';
 import Inventory from './components/Inventory';
 import AddFragrance from './components/AddFragrance';
@@ -127,6 +128,7 @@ function App() {
 
       <main className="app-main">
         <aside className="sidebar">
+          <ClockWidget />
           <WeatherWidget
             weather={weather}
             loading={weatherLoading}

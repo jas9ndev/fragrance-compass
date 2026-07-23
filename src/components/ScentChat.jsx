@@ -59,23 +59,32 @@ export default function ScentChat({ fragrances, weather }) {
       const reader = res.body.getReader();
       const decoder = new TextDecoder();
       let fullText = '';
+      let buffer = '';
 
       while (true) {
         const { done, value } = await reader.read();
         if (done) break;
-        const chunk = decoder.decode(value, { stream: true });
-        // Parse SSE format
-        const lines = chunk.split('\n').filter(l => l.startsWith('data: '));
-        for (const line of lines) {
+
+        buffer += decoder.decode(value, { stream: true });
+        const parts = buffer.split('\n');
+        buffer = parts.pop() || '';
+
+        for (const part of parts) {
+          if (!part.startsWith('data: ')) continue;
+          const data = part.slice(6).trim();
+          if (data === '[DONE]') continue;
+
           try {
-            const json = JSON.parse(line.slice(6));
-            const content = json.choices?.[0]?.delta?.content || '';
-            fullText += content;
-            setMessages(prev => {
-              const copy = [...prev];
-              copy[copy.length - 1] = { role: 'assistant', content: fullText };
-              return copy;
-            });
+            const parsed = JSON.parse(data);
+            const content = parsed.content || '';
+            if (content) {
+              fullText += content;
+              setMessages(prev => {
+                const copy = [...prev];
+                copy[copy.length - 1] = { role: 'assistant', content: fullText };
+                return copy;
+              });
+            }
           } catch {}
         }
       }

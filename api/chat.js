@@ -1,42 +1,27 @@
 // Vercel serverless function — DeepSeek AI fragrance chat
-// Uses streaming via edge runtime
+// Uses standard Node.js runtime (not edge) for reliable env var support
 
-export const config = {
-  runtime: 'edge',
-};
-
-export default async function handler(request) {
+export default async function handler(req, res) {
   // CORS headers
-  const headers = {
-    'Access-Control-Allow-Origin': '*',
-    'Access-Control-Allow-Methods': 'POST, OPTIONS',
-    'Access-Control-Allow-Headers': 'Content-Type',
-    'Content-Type': 'text/event-stream',
-    'Cache-Control': 'no-cache',
-    Connection: 'keep-alive',
-  };
+  res.setHeader('Access-Control-Allow-Origin', '*');
+  res.setHeader('Access-Control-Allow-Methods', 'POST, OPTIONS');
+  res.setHeader('Access-Control-Allow-Headers', 'Content-Type');
 
-  if (request.method === 'OPTIONS') {
-    return new Response(null, { status: 204, headers });
+  if (req.method === 'OPTIONS') {
+    return res.status(204).end();
   }
 
-  if (request.method !== 'POST') {
-    return new Response(JSON.stringify({ error: 'Method not allowed' }), {
-      status: 405,
-      headers: { ...headers, 'Content-Type': 'application/json' },
-    });
+  if (req.method !== 'POST') {
+    return res.status(405).json({ error: 'Method not allowed' });
   }
 
   const apiKey = process.env.DEEPSEEK_API_KEY;
   if (!apiKey) {
-    return new Response(JSON.stringify({ error: 'API key not configured' }), {
-      status: 500,
-      headers: { ...headers, 'Content-Type': 'application/json' },
-    });
+    return res.status(500).json({ error: 'API key not configured' });
   }
 
   try {
-    const { message, context } = await request.json();
+    const { message, context } = req.body;
 
     const systemPrompt = `You are a friendly fragrance expert called "Scenty" in the Fragrance Compass app.
 
@@ -49,7 +34,7 @@ Current context for the user:
 
 Help the user choose what to wear, answer questions about fragrances, give recommendations based on their collection and the current conditions, or just chat about scents. Be conversational, knowledgeable, and concise. Keep responses to 3-4 sentences unless they ask for more detail.`;
 
-    const response = await fetch('https://api.deepseek.com/v1/chat/completions', {
+    const response = await fetch('https://api.deepseek.com/chat/completions', {
       method: 'POST',
       headers: {
         'Content-Type': 'application/json',
@@ -69,21 +54,47 @@ Help the user choose what to wear, answer questions about fragrances, give recom
 
     if (!response.ok) {
       const errorText = await response.text();
-      return new Response(JSON.stringify({ error: `API error: ${response.status} — ${errorText}` }), {
-        status: 500,
-        headers: { ...headers, 'Content-Type': 'application/json' },
-      });
+      return res.status(500).json({ error: `API error: ${response.status} — ${errorText}` });
     }
 
-    // Stream the response back
-    const { readable, writable } = new TransformStream();
-    response.body.pipeTo(writable);
+    // Stream DeepSeek's response back as SSE
+    res.setHeader('Content-Type', 'text/event-stream');
+    res.setHeader('Cache-Control', 'no-cache');
+    res.setHeader('Connection', 'keep-alive');
+    res.flushHeaders();
 
-    return new Response(readable, { headers });
+    const reader = response.body.getReader();
+    const decoder = new TextDecoder();
+    let buffer = '';
+
+    while (true) {
+      const { done, value } = await reader.read();
+      if (done) {
+        res.write('data: [DONE]\n\n');
+        res.end();
+        break;
+      }
+
+      buffer += decoder.decode(value, { stream: true });
+      const lines = buffer.split('\n');
+      buffer = lines.pop() || '';
+
+      for (const line of lines) {
+        if (line.startsWith('data: ')) {
+          const data = line.slice(6).trim();
+          if (data === '[DONE]') continue;
+
+          try {
+            const parsed = JSON.parse(data);
+            const delta = parsed.choices?.[0]?.delta?.content || '';
+            if (delta) {
+              res.write(`data: ${JSON.stringify({ content: delta })}\n\n`);
+            }
+          } catch {}
+        }
+      }
+    }
   } catch (err) {
-    return new Response(JSON.stringify({ error: err.message }), {
-      status: 500,
-      headers: { ...headers, 'Content-Type': 'application/json' },
-    });
+    return res.status(500).json({ error: err.message });
   }
 }

@@ -1,13 +1,4 @@
-import { useState, useEffect } from 'react';
-
 export default function WeatherWidget({ weather, loading, error, location }) {
-  const [time, setTime] = useState(new Date());
-
-  useEffect(() => {
-    const interval = setInterval(() => setTime(new Date()), 1000);
-    return () => clearInterval(interval);
-  }, []);
-
   if (loading) {
     return (
       <div className="weather-widget loading">
@@ -29,16 +20,6 @@ export default function WeatherWidget({ weather, loading, error, location }) {
   if (!weather) return null;
 
   const weatherIcon = getWeatherEmoji(weather.weatherCode);
-  const dateStr = time.toLocaleDateString('en-US', {
-    weekday: 'long',
-    month: 'long',
-    day: 'numeric',
-  });
-  const timeStr = time.toLocaleTimeString('en-US', {
-    hour: 'numeric',
-    minute: '2-digit',
-  });
-  const timeIcon = getTimeEmoji(time.getHours());
 
   return (
     <div className="weather-widget">
@@ -51,8 +32,6 @@ export default function WeatherWidget({ weather, loading, error, location }) {
       </div>
       <div className="weather-details">
         <span className="weather-location">{location}</span>
-        <span className="weather-date">{dateStr}</span>
-        <span className="weather-time">{timeIcon} {timeStr}</span>
         <span className="weather-humidity">💧 {weather.humidity}% humidity</span>
         <span className="weather-highlow">H:{weather.high}° L:{weather.low}°</span>
       </div>
@@ -72,11 +51,4 @@ function getWeatherEmoji(code) {
   if (code >= 85 && code <= 86) return '🌨️';
   if (code >= 95) return '⛈️';
   return '🌤️';
-}
-
-function getTimeEmoji(hour) {
-  if (hour >= 5 && hour < 8) return '🌅';
-  if (hour >= 8 && hour < 17) return '☀️';
-  if (hour >= 17 && hour < 20) return '🌇';
-  return '🌙';
 }

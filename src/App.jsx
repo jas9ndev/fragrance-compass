@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useRef } from 'react';
 import './App.css';
 
 import WeatherWidget from './components/WeatherWidget';
@@ -8,6 +8,8 @@ import Inventory from './components/Inventory';
 import AddFragrance from './components/AddFragrance';
 import History from './components/History';
 import ScentChat from './components/ScentChat';
+import FragranceSearch from './components/FragranceSearch';
+import FragranceBrowse from './components/FragranceBrowse';
 
 import { useWeather } from './hooks/useWeather';
 import { loadFragrances, saveFragrances, getNewId } from './data/fragrances';
@@ -15,24 +17,53 @@ import { loadFragrances, saveFragrances, getNewId } from './data/fragrances';
 function App() {
   const { weather, loading: weatherLoading, error: weatherError, location, refresh } = useWeather();
   const [fragrances, setFragrances] = useState([]);
-  const [tab, setTab] = useState('today'); // 'today' | 'inventory'
+  const [wishlist, setWishlist] = useState([]);
+  const [tab, setTab] = useState('today'); // 'today' | 'inventory' | 'wishlist' | 'browse'
+  const initialLoadDone = useRef(false);
 
-  // Load fragrances on mount
+  // Load saved data on mount — set both state AND localStorage right away so
+  // the save effect later doesn't overwrite with empty data
   useEffect(() => {
-    setFragrances(loadFragrances());
+    const saved = loadFragrances();
+    setFragrances(saved);
+    // Pre-populate localStorage in case load was returning stale/missing data
+    if (saved.length > 0) saveFragrances(saved);
+    try {
+      const stored = localStorage.getItem('fragrance-compass-wishlist');
+      if (stored) setWishlist(JSON.parse(stored));
+    } catch {}
   }, []);
 
-  // Save fragrances whenever they change
+  // Save fragrances whenever they change (skip the very first render so mount effect isn't clobbered)
   useEffect(() => {
-    if (fragrances.length > 0) {
-      saveFragrances(fragrances);
+    if (!initialLoadDone.current) {
+      initialLoadDone.current = true;
+      return;
     }
+    saveFragrances(fragrances);
   }, [fragrances]);
 
+  // Save wishlist whenever it changes
+  useEffect(() => {
+    try {
+      localStorage.setItem('fragrance-compass-wishlist', JSON.stringify(wishlist));
+    } catch {}
+  }, [wishlist]);
+
   const handleAddFragrance = (fragrance) => {
+    // Normalize array fields in case Scenty sends strings
+    const ensureArray = (val) => {
+      if (Array.isArray(val)) return val;
+      if (typeof val === 'string' && val.trim()) return val.split(',').map(s => s.trim()).filter(Boolean);
+      return [];
+    };
     const newFrag = {
       ...fragrance,
       id: getNewId(fragrances),
+      notes: ensureArray(fragrance.notes),
+      seasons: ensureArray(fragrance.seasons),
+      occasions: ensureArray(fragrance.occasions),
+      times: ensureArray(fragrance.times),
       weather: fragrance.seasons?.map(s => {
         // Map seasons to common weather conditions
         const seasonWeather = {
@@ -48,10 +79,42 @@ function App() {
     setFragrances(updated);
   };
 
+  const handleAddWishlist = (item) => {
+    if (wishlist.some(w => w.name === item.name && w.brand === item.brand)) {
+      alert(`${item.name} is already in your wishlist!`);
+      return;
+    }
+    setWishlist(prev => [...prev, item]);
+  };
+
+  const handleRemoveWishlist = (id) => {
+    setWishlist(prev => prev.filter(w => w.id !== id));
+  };
+
+  const handleWishlistToCollection = (item) => {
+    handleAddFragrance({
+      name: item.name,
+      brand: item.brand,
+      scentFamily: item.scentFamily || 'Fresh',
+      seasons: item.seasons || [],
+      occasions: item.occasions || [],
+      times: item.times || [],
+      notes: item.notes || [],
+      rating: item.rating || 3,
+      description: item.description || '',
+    });
+    handleRemoveWishlist(item.id);
+    setTab('inventory');
+  };
+
   const handleDeleteFragrance = (id) => {
     if (window.confirm('Remove this fragrance from your collection?')) {
       setFragrances(prev => prev.filter(f => f.id !== id));
     }
+  };
+
+  const handleEditFragrance = (id, updates) => {
+    setFragrances(prev => prev.map(f => f.id === id ? { ...f, ...updates } : f));
   };
 
   const handleRefreshPicks = () => {
@@ -123,6 +186,18 @@ function App() {
           >
             📦 Collection
           </button>
+          <button
+            className={`tab-btn ${tab === 'wishlist' ? 'active' : ''}`}
+            onClick={() => setTab('wishlist')}
+          >
+            ♡ Wishlist ({wishlist.length})
+          </button>
+          <button
+            className={`tab-btn ${tab === 'browse' ? 'active' : ''}`}
+            onClick={() => setTab('browse')}
+          >
+            📋 Browse
+          </button>
         </nav>
       </header>
 
@@ -155,16 +230,64 @@ function App() {
               />
               <History fragrances={fragrances} />
             </>
+          ) : tab === 'wishlist' ? (
+            <div className="wishlist-view">
+              <FragranceSearch
+                onAddToCollection={handleAddFragrance}
+                onAddToWishlist={handleAddWishlist}
+              />
+              <h2>♡ Wishlist ({wishlist.length})</h2>
+              {wishlist.length === 0 ? (
+                <p className="empty-wishlist">Your wishlist is empty. Search above to add fragrances!</p>
+              ) : (
+                <div className="wishlist-grid">
+                  {wishlist.map(item => (
+                    <div key={item.id} className="wishlist-card">
+                      <div className="wishlist-card-img">
+                        {item.image ? (
+                          <img src={item.image} alt={item.name} loading="lazy" />
+                        ) : (
+                          <span className="wishlist-emoji">🧴</span>
+                        )}
+                      </div>
+                      <div className="wishlist-card-body">
+                        <strong>{item.name}</strong>
+                        <span className="wishlist-brand">{item.brand}</span>
+                        {item.price && <span className="wishlist-price">${item.price}</span>}
+                        <div className="wishlist-card-actions">
+                          <button className="btn btn-sm btn-primary" onClick={() => handleWishlistToCollection(item)}>
+                            + Add to Collection
+                          </button>
+                          <button className="btn btn-sm btn-danger" onClick={() => handleRemoveWishlist(item.id)}>
+                            ✕ Remove
+                          </button>
+                        </div>
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              )}
+            </div>
+          ) : tab === 'browse' ? (
+            <FragranceBrowse
+              onAddToCollection={handleAddFragrance}
+              onAddToWishlist={handleAddWishlist}
+            />
           ) : (
-            <>
+            <div>
+              <FragranceSearch
+                onAddToCollection={handleAddFragrance}
+                onAddToWishlist={handleAddWishlist}
+              />
               <div className="inventory-header">
                 <AddFragrance onAdd={handleAddFragrance} />
               </div>
               <Inventory
                 fragrances={fragrances}
                 onDelete={handleDeleteFragrance}
+                onEdit={handleEditFragrance}
               />
-            </>
+            </div>
           )}
         </section>
       </main>

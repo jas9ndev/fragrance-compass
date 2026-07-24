@@ -63,6 +63,7 @@ export default function Inventory({ fragrances, onDelete, onEdit }) {
               key={frag.id}
               fragrance={frag}
               onDelete={onDelete}
+              onEdit={onEdit}
             />
           ))}
         </div>

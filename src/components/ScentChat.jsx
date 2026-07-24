@@ -103,16 +103,29 @@ export default function ScentChat({ fragrances, weather, onAdd }) {
 
       // If there's an ADD payload, trigger it
       if (addPayload && onAdd) {
+        // Normalize notes to an array — Scenty might send as string or comma-separated
+        let notesArr = [];
+        if (Array.isArray(addPayload.notes)) {
+          notesArr = addPayload.notes;
+        } else if (typeof addPayload.notes === 'string' && addPayload.notes.trim()) {
+          notesArr = addPayload.notes.split(',').map(n => n.trim()).filter(Boolean);
+        }
+        // Normalize seasons/times/occasions — might be comma-separated strings
+        const normalizeArr = (val) => {
+          if (Array.isArray(val)) return val;
+          if (typeof val === 'string' && val.trim()) return val.split(',').map(s => s.trim()).filter(Boolean);
+          return [];
+        };
         const newFragrance = {
           id: Date.now().toString(),
           name: addPayload.name || 'Unknown',
           brand: addPayload.brand || 'Unknown',
           scentFamily: addPayload.scentFamily || 'Fresh',
-          seasons: addPayload.seasons || [],
-          occasions: addPayload.occasions || [],
-          times: addPayload.times || [],
+          seasons: normalizeArr(addPayload.seasons),
+          occasions: normalizeArr(addPayload.occasions),
+          times: normalizeArr(addPayload.times),
           rating: addPayload.rating || 3,
-          notes: addPayload.notes || '',
+          notes: notesArr,
           dateAdded: new Date().toISOString(),
         };
         onAdd(newFragrance);
